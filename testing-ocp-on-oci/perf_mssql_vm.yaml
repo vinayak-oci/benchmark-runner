@@ -1,7 +1,7 @@
 apiVersion: ripsaw.cloudbulldozer.io/v1alpha1
 kind: Benchmark
 metadata:
-  name: hammerdb-pod
+  name: hammerdb-vm
   namespace: benchmark-operator
 spec:
   system_metrics:
@@ -21,7 +21,7 @@ spec:
     args:
       pin: True # enable for nodeSelector
       pin_node: vinayakb0909-compute-3.private.openshiftvcn.oraclevcn.com
-      resources: True # enable for resources requests/limits
+      resources: False # enable for resources requests/limits
       requests_cpu: 16
       requests_memory: 16Gi
       limits_cpu: 16
@@ -29,6 +29,7 @@ spec:
       db_type: "mssql"
       timed_test: true
       test_type: "tpc-c"
+      # true only for first run to build schema
       db_init: true
       db_benchmark: true
       db_server: mssql-deployment.mssql-db
@@ -63,7 +64,7 @@ spec:
       db_mssql_bucket: 1
       db_mssql_durability: "SCHEMA_AND_DATA"
       db_mssql_checkpoint: "false"
-      # mysql:
+      # mariadb:
       db_mysql_storage_engine: "innodb"
       db_mysql_partition: "false"
       db_mysql_socket: "/var/lib/mysql/mysql.sock"
@@ -75,3 +76,34 @@ spec:
       db_postgresql_dritasnap: "false"
       db_postgresql_oracompat: "false"
       db_postgresql_storedprocs: "false"
+      kind: vm
+      client_vm:
+        dedicatedcpuplacement: false
+        sockets: 32
+        cores: 1
+        threads: 1
+        image: quay.io/cloud-bulldozer/centos-stream8-mssql2019-container-disk:latest
+        limits:
+          memory: 32Gi
+        requests:
+          memory: 32Gi
+        network:
+          front_end: masquerade
+          multiqueue:
+            enabled: false # if set to true, highly recommend to set selinux to permissive on the nodes where the vms would be scheduled
+            queues: 0 # must be given if enabled is set to true and ideally should be set to vcpus ideally so sockets*threads*cores, your image must've ethtool installed
+        extra_options:
+          - none
+          #- hostpassthrough
+        # ODF PVC
+        pvc: True # enable for ODF PVC
+        pvc_storageclass: oci-bv
+        # Can be one of ReadWriteOnce,ReadOnlyMany,ReadWriteMany Default: ReadWriteOnce
+        pvc_pvcaccessmode: ReadWriteMany
+        # Can be one of Filesystem,Block Default: Filesystem
+        pvc_pvcvolumemode: Block
+        pvc_storagesize: 100Gi
+        # HostPath - Configuring SELinux on cluster workers
+        hostpath: false # enable for hostpath
+        hostpath_path: /var/tmp/disk.img
+        hostpath_storagesize: 100Gi
