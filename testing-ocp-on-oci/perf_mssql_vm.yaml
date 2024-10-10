@@ -20,12 +20,12 @@ spec:
     name: hammerdb
     args:
       pin: True # enable for nodeSelector
-      pin_node: vinayakb0909-compute-3.private.openshiftvcn.oraclevcn.com
+      pin_node: vinayakb1709-cp-1-ad1.private2.openshiftvcn.oraclevcn.com
       resources: False # enable for resources requests/limits
-      requests_cpu: 16
-      requests_memory: 16Gi
-      limits_cpu: 16
-      limits_memory: 16Gi
+      requests_cpu: 32
+      requests_memory: 32Gi
+      limits_cpu: 32
+      limits_memory: 32Gi
       db_type: "mssql"
       timed_test: true
       test_type: "tpc-c"

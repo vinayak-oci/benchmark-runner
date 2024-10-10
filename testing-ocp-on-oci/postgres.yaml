@@ -48,7 +48,7 @@ spec:
         type: postgres-database-server
     spec:
       nodeSelector:
-        kubernetes.io/hostname: vinayakb0909-compute-1.private.openshiftvcn.oraclevcn.com
+        kubernetes.io/hostname: vinayakb1709-cp-1-ad1.private2.openshiftvcn.oraclevcn.com
       terminationGracePeriodSeconds: 10
       containers:
         - name: postgres
@@ -59,11 +59,11 @@ spec:
             - containerPort: 5432
           resources:
             requests:
-              cpu: 10m
-              memory: 16Gi
+              cpu: '32'
+              memory: 32Gi
             limits:
-              cpu: '4'
-              memory: 16Gi
+              cpu: '32'
+              memory: 32Gi
           env:
             - name: POSTGRESQL_USER
               value: "test"

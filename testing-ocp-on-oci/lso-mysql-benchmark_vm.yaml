@@ -1,4 +1,25 @@
-
+# {% if storage_type == 'lso' -%}
+apiVersion: local.storage.openshift.io/v1
+kind: LocalVolume
+metadata:
+  name: local-disks
+  namespace: openshift-local-storage
+spec:
+  nodeSelector:
+    nodeSelectorTerms:
+    - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - {{ pin_node2 }}
+  storageClassDevices:
+    - storageClassName: local-sc
+      volumeMode: Block
+      fsType: ext4
+      devicePaths:
+        - /dev/disk/by-id/{{ lso_disk_id }}
+---
+# {%- endif %}
 apiVersion: ripsaw.cloudbulldozer.io/v1alpha1
 kind: Benchmark
 metadata:
@@ -7,33 +28,33 @@ metadata:
 spec:
   system_metrics:
     collection: False
-  #   prom_url: "https://prometheus-k8s.openshift-monitoring.svc.cluster.local:9091"
-  #   es_url: "http://elasticsearch.example.com:gol9999"
-  #   prom_token: "fake_prom_token"
-  #   metrics_profile: "node-metrics.yml"
-  #   index_name: system-metrics
+  #   prom_url: "{{ prom_url }}"
+  #   es_url: "{{ es_url }}"
+  #   prom_token: "{{ prom_token }}"
+  #   metrics_profile: "{{ metrics_profile }}"
+  #   index_name: {{ sm_index_name }}
   # elasticsearch:
-  #   url: "http://elasticsearch.example.com:gol9999"
-  #   index_name: hammerdb
+  #   url: "{{ es_url }}"
+  #   index_name: {{ es_index_name }}
   metadata:
     collection: false
   workload:
     name: hammerdb
     args:
-      pin: True # enable for nodeSelector
-      pin_node: vinayakb1709-cp-1-ad1.private2.openshiftvcn.oraclevcn.com 
+      pin: True
+      pin_node: vinayakb1709-cp-1-ad1.private2.openshiftvcn.oraclevcn.com
       db_type: "mariadb"
       timed_test: true
       test_type: "tpc-c"
       # true only for first run to build schema
       db_init: true
       db_benchmark: true
-      db_server: mariadb-deployment.mariadb-db
-      db_port: "3306"
+      db_server: mssql-deployment.mssql-db
+      db_port: "1433"
       db_warehouses: 96
       db_num_workers: 32
-      db_user: "root"
-      db_pass: "mysql"
+      db_user: "SA"
+      db_pass: "s3curePasswordString"
       db_name: "tpcc"
       transactions: 100000
       raiseerror: "false"
@@ -78,7 +99,7 @@ spec:
         sockets: 32
         cores: 1
         threads: 1
-        image: quay.io/cloud-bulldozer/centos-stream8-mariadb103-container-disk:latest
+        image: quay.io/cloud-bulldozer/centos-stream8-mssql2019-container-disk:latest
         limits:
           memory: 32Gi
         requests:
@@ -92,10 +113,15 @@ spec:
           - none
           #- hostpassthrough
         # ODF PVC
-        pvc: True # enable for ODF PVC
-        pvc_storageclass: oci-bv
+        pvc: True
+        # {%- if storage_type == 'lso' %}
+        pvc_storageclass: local-sc
+        pvc_pvcaccessmode: ReadWriteOnce
+        # {%- else %}
+        # pvc_storageclass: ocs-storagecluster-ceph-rbd
         # Can be one of ReadWriteOnce,ReadOnlyMany,ReadWriteMany Default: ReadWriteOnce
-        pvc_pvcaccessmode: ReadWriteMany
+        # pvc_pvcaccessmode: ReadWriteMany
+        # {%- endif %}
         # Can be one of Filesystem,Block Default: Filesystem
         pvc_pvcvolumemode: Block
         pvc_storagesize: 100Gi
